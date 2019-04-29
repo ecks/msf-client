@@ -1,0 +1,10 @@
+[package]
+name = "msf-client"
+version = "0.1.0"
+authors = ["Hristo Asenov <hristo.s.asenov@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+serde = "1.0.90"
+rmp-serde = "0.13.7"
+reqwest = "0.9.15"
