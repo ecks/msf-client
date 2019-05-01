@@ -6,13 +6,16 @@ use reqwest::Client;
 use reqwest::header;
 
 use std::str;
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
 use rmp_serde::{Serializer,Deserializer};
 
-type SessionMapRes = Result<HashMap<String, String>, &'static str>;
-type SessionRes = Result<Session, &'static str>;
+type SessionMap = HashMap<String, String>;
+type Res<T> = Result<T, &'static str>;
 
 pub struct Session {
     host: String,
@@ -21,7 +24,7 @@ pub struct Session {
 
 impl Session {
 
-    pub fn execute<'a>(&mut self, method: &'a str, args: Vec<&'a str>) -> SessionMapRes {
+    pub fn execute<'a>(&mut self, method: &'a str, args: Vec<&'a str>) -> Res<SessionMap> {
 
         // clone args so that we may insert stuff in there
         let mut argsc = args.clone();
@@ -41,7 +44,6 @@ impl Session {
 
         let mut headers = header::HeaderMap::new();
         headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static("binary/message-pack"));
-        headers.insert(header::CONNECTION, header::HeaderValue::from_static("keep-alive"));
 
         // panics on error
         let client = Client::builder()
@@ -53,7 +55,7 @@ impl Session {
             .body(buf)
             .send().unwrap();
 
-        if res.status().to_string() == "200 OK" {
+        if res.status() == reqwest::StatusCode::OK {
             println!("{:?}", res.headers().get(header::CONTENT_TYPE).unwrap().to_str());
             println!("{:?}", res.content_length());
             let len_from_header = res.content_length().unwrap();
@@ -76,22 +78,60 @@ impl Session {
         }
     }
 
-    fn authenticate(&mut self, username: &str, password: &str) -> SessionMapRes {
+    fn authenticate(&mut self, username: &str, password: &str) -> Res<SessionMap> {
         let args = vec![username, password];
         self.execute("auth.login", args)
     }
 
-    pub fn new(username: &str, password: &str, host: String) -> SessionRes {
-        let mut session = Session { host, token: None };
+    pub fn new(username: &str, password: &str, host: String) -> Res<Session> {
+        let mut sess = Session { host, token: None };
 
-        let response = session.authenticate(username, password)?;
+
+
+        let response = sess.authenticate(username, password)?;
 
         // map over Option, cloning the String to store in Struct
-        session.token = response.get("token").map(|s| s.clone());
+        sess.token = response.get("token").cloned();
 
         println!("{:?}", response.get("result")); 
-        println!("{:?}", session.token); 
+        println!("{:?}", sess.token); 
 
-        Ok(session)
+        Ok(sess)
+    }
+}
+
+type RcRef<T> = Rc<RefCell<T>>;
+
+pub struct MsfClient {
+    sess: RcRef<Session>,
+}
+
+impl MsfClient {
+    pub fn new(username: &str, password: &str, host: String) -> Res<MsfClient> {
+        let sess = match Session::new(username, password, host) {
+            Ok(sess) => sess,
+            Err(err) => { eprintln!("{}", err);
+                          return Err(err)
+                        },
+        };
+
+        Ok(MsfClient { sess: Rc::new(RefCell::new(sess))})
+
+    }
+
+    pub fn core(&mut self) -> CoreManager {
+        CoreManager { sess: Rc::clone(&self.sess) }
+    }
+
+}
+
+pub struct CoreManager {
+    sess: RcRef<Session>,
+}
+
+impl CoreManager {
+
+    pub fn version(&mut self) -> Res<SessionMap> {
+        self.sess.borrow_mut().execute("core.version", Vec::new())
     }
 }
