@@ -21,4 +21,17 @@ fn main() {
                       return
                     },
     };
+
+    match client.modules().exploits() {
+        Ok(res) => { let mod_names = res.get("modules").unwrap();
+                     for mod_name in mod_names {
+                         println!("{}", mod_name);
+                     };
+                     res
+                   }
+        Err(err) => { eprintln!("{}", err);
+                      return
+                    },
+
+    };
 }

@@ -14,8 +14,15 @@ use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
 use rmp_serde::{Serializer,Deserializer};
 
+type SessionMapVec = HashMap<String, Vec<String>>;
 type SessionMap = HashMap<String, String>;
+
 type Res<T> = Result<T, &'static str>;
+
+pub enum SessionMapType {
+    SMV(SessionMapVec),
+    SM(SessionMap),
+}
 
 pub struct Session {
     host: String,
@@ -24,7 +31,7 @@ pub struct Session {
 
 impl Session {
 
-    pub fn execute<'a>(&mut self, method: &'a str, args: Vec<&'a str>) -> Res<SessionMap> {
+    pub fn execute<'a>(&mut self, method: &'a str, args: Vec<&'a str>) -> Res<SessionMapType> {
 
         // clone args so that we may insert stuff in there
         let mut argsc = args.clone();
@@ -70,15 +77,23 @@ impl Session {
             }
 
             let mut de = Deserializer::new(body_buf.as_slice());
-            let de_str = Deserialize::deserialize(&mut de).unwrap();
+
+            if method == "auth.login" || method == "core.version" {
+                let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-            Ok(de_str)
+                Ok(SessionMapType::SM(de_str))
+            }
+            else {
+                let de_str = Deserialize::deserialize(&mut de).unwrap();
+        
+                Ok(SessionMapType::SMV(de_str))
+            }
         } else {
             Err("Bad status code")
         }
     }
 
-    fn authenticate(&mut self, username: &str, password: &str) -> Res<SessionMap> {
+    fn authenticate(&mut self, username: &str, password: &str) -> Res<SessionMapType> {
         let args = vec![username, password];
         self.execute("auth.login", args)
     }
@@ -88,7 +103,11 @@ impl Session {
 
 
 
-        let response = sess.authenticate(username, password)?;
+        let response = match sess.authenticate(username, password).unwrap() {
+            SessionMapType::SM(sm) => sm,
+            SessionMapType::SMV(_) => return Err("incorrect type"),
+
+        };
 
         // map over Option, cloning the String to store in Struct
         sess.token = response.get("token").cloned();
@@ -123,6 +142,10 @@ impl MsfClient {
         CoreManager { sess: Rc::clone(&self.sess) }
     }
 
+    pub fn modules(&mut self) -> ModuleManager {
+        ModuleManager { sess: Rc::clone(&self.sess) }
+    }
+
 }
 
 pub struct CoreManager {
@@ -132,6 +155,23 @@ pub struct CoreManager {
 impl CoreManager {
 
     pub fn version(&mut self) -> Res<SessionMap> {
-        self.sess.borrow_mut().execute("core.version", Vec::new())
+        match self.sess.borrow_mut().execute("core.version", Vec::new()).unwrap() {
+            SessionMapType::SM(sm) => Ok(sm),
+            SessionMapType::SMV(_) => Err("incorrect type"),
+        }
+    }
+}
+
+pub struct ModuleManager {
+    sess: RcRef<Session>,
+}
+
+impl ModuleManager {
+
+    pub fn exploits(&mut self) -> Res<SessionMapVec> {
+        match self.sess.borrow_mut().execute("module.exploits", Vec::new()).unwrap() {
+            SessionMapType::SMV(smv) => Ok(smv),
+            SessionMapType::SM(_) => Err("incorrect type"),
+        }
     }
 }
