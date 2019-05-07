@@ -1,5 +1,6 @@
 use serde::{Serialize,Deserialize};
 
+// reference: https://metasploit.help.rapid7.com/docs/standard-api-methods-reference
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthLogin {
