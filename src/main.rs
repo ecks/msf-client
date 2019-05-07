@@ -12,9 +12,9 @@ fn main() {
     };
 
     match client.core().version() {
-        Ok(res) => { println!("{:?}", res.get("version"));
-                     println!("{:?}", res.get("ruby"));
-                     println!("{:?}", res.get("api"));
+        Ok(res) => { println!("{}", res.version);
+                     println!("{}", res.ruby);
+                     println!("{}", res.api);
                      res
                    }
         Err(err) => { eprintln!("{}", err);
@@ -23,7 +23,7 @@ fn main() {
     };
 
     match client.modules().exploits() {
-        Ok(res) => { let mod_names = res.get("modules").unwrap();
+        Ok(res) => { let mod_names = &res.modules;
                      for mod_name in mod_names {
                          println!("{}", mod_name);
                      };

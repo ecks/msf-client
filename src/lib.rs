@@ -1,6 +1,9 @@
 extern crate reqwest;
 
-extern crate rmp_serde;
+extern crate serde;
+extern crate rmp_serde as rmps;
+
+pub mod msg;
 
 use reqwest::Client;
 use reqwest::header;
@@ -12,17 +15,24 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
-use rmp_serde::{Serializer,Deserializer};
+use rmps::{Serializer,Deserializer};
 
-type SessionMapVec = HashMap<String, Vec<String>>;
+use msg::AuthLogin;
+use msg::CoreVersion;
+use msg::ModuleExploits;
+
+//type SessionMapVec = HashMap<String, Vec<String>>;
 type SessionMap = HashMap<String, String>;
 
-type Res<T> = Result<T, &'static str>;
-
 pub enum SessionMapType {
-    SMV(SessionMapVec),
-    SM(SessionMap),
+    WithAuthLogin(AuthLogin),
+    WithCoreVersion(CoreVersion),
+    WithModuleExploits(ModuleExploits),
+//    WithVec(SessionMapVec),
+    WithString(SessionMap),
 }
+
+type Res<T> = Result<T, &'static str>;
 
 pub struct Session {
     host: String,
@@ -78,15 +88,25 @@ impl Session {
 
             let mut de = Deserializer::new(body_buf.as_slice());
 
-            if method == "auth.login" || method == "core.version" {
+            if method == "auth.login" {
                 let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                Ok(SessionMapType::SM(de_str))
+                Ok(SessionMapType::WithAuthLogin(de_str))
+            }
+            else if method == "core.version" {
+                let de_str = Deserialize::deserialize(&mut de).unwrap();
+        
+                Ok(SessionMapType::WithCoreVersion(de_str))
+            }
+            else if method == "module.exploits" {
+                let de_str = Deserialize::deserialize(&mut de).unwrap();
+        
+                Ok(SessionMapType::WithModuleExploits(de_str))
             }
             else {
                 let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                Ok(SessionMapType::SMV(de_str))
+                Ok(SessionMapType::WithString(de_str))
             }
         } else {
             Err("Bad status code")
@@ -104,15 +124,15 @@ impl Session {
 
 
         let response = match sess.authenticate(username, password).unwrap() {
-            SessionMapType::SM(sm) => sm,
-            SessionMapType::SMV(_) => return Err("incorrect type"),
+            SessionMapType::WithAuthLogin(sm) => sm,
+            _ => return Err("incorrect type"),
 
         };
 
         // map over Option, cloning the String to store in Struct
-        sess.token = response.get("token").cloned();
+        sess.token = Some(response.token.clone());
 
-        println!("{:?}", response.get("result")); 
+        println!("{}", response.result); 
         println!("{:?}", sess.token); 
 
         Ok(sess)
@@ -154,12 +174,31 @@ pub struct CoreManager {
 
 impl CoreManager {
 
-    pub fn version(&mut self) -> Res<SessionMap> {
+    pub fn version(&mut self) -> Res<CoreVersion> {
         match self.sess.borrow_mut().execute("core.version", Vec::new()).unwrap() {
-            SessionMapType::SM(sm) => Ok(sm),
-            SessionMapType::SMV(_) => Err("incorrect type"),
+            SessionMapType::WithCoreVersion(sm) => Ok(sm),
+            _ => Err("incorrect type"),
         }
     }
+}
+
+//trait MsfModule {
+//    pub fn init(sess: RcRef<ession>, mtype: &str, mname: &str) {
+        
+
+//    }
+
+//}
+
+pub struct ExploitModule {
+    sess: RcRef<Session>,
+}
+
+impl ExploitModule {
+    pub fn new_with(sess: RcRef<Session>, exploit: &str) -> ExploitModule {
+        ExploitModule { sess }
+    }
+
 }
 
 pub struct ModuleManager {
@@ -168,10 +207,14 @@ pub struct ModuleManager {
 
 impl ModuleManager {
 
-    pub fn exploits(&mut self) -> Res<SessionMapVec> {
+    pub fn exploits(&mut self) -> Res<ModuleExploits> {
         match self.sess.borrow_mut().execute("module.exploits", Vec::new()).unwrap() {
-            SessionMapType::SMV(smv) => Ok(smv),
-            SessionMapType::SM(_) => Err("incorrect type"),
+            SessionMapType::WithModuleExploits(me) => Ok(me),
+            _ => Err("incorrect type"),
         }
+    }
+
+    pub fn use_exploit(&mut self, mname: &str) -> ExploitModule {
+        ExploitModule::new_with(Rc::clone(&self.sess), mname)
     }
 }
