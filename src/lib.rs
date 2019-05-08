@@ -20,6 +20,7 @@ use rmps::{Serializer,Deserializer};
 use msg::AuthLogin;
 use msg::CoreVersion;
 use msg::ModuleExploits;
+use msg::ModuleInfo;
 
 //type SessionMapVec = HashMap<String, Vec<String>>;
 type SessionMap = HashMap<String, String>;
@@ -28,6 +29,7 @@ pub enum SessionMapType {
     WithAuthLogin(AuthLogin),
     WithCoreVersion(CoreVersion),
     WithModuleExploits(ModuleExploits),
+    WithModuleInfo(ModuleInfo),
 //    WithVec(SessionMapVec),
     WithString(SessionMap),
 }
@@ -102,6 +104,11 @@ impl Session {
                 let de_str = Deserialize::deserialize(&mut de).unwrap();
         
                 Ok(SessionMapType::WithModuleExploits(de_str))
+            }
+            else if method == "module.info" {
+                let de_str = Deserialize::deserialize(&mut de).unwrap();
+        
+                Ok(SessionMapType::WithModuleInfo(de_str))
             }
             else {
                 let de_str = Deserialize::deserialize(&mut de).unwrap();
@@ -182,21 +189,33 @@ impl CoreManager {
     }
 }
 
-//trait MsfModule {
-//    pub fn init(sess: RcRef<ession>, mtype: &str, mname: &str) {
-        
+trait MsfModule {
+    fn init(sess: &RcRef<Session>, mtype: &str, mname: &str) {
+        let mut args: Vec<&str> = Vec::new();
+        args.push(mtype);
+        args.push(mname);
+        match sess.borrow_mut().execute("module.info", args).unwrap() {
+            SessionMapType::WithModuleInfo(mi) => { println!("{}", mi.name);
+                                                    println!("{}", mi.description);
+                                                    println!("{}", mi.license)
+                                                  },
+            _ => println!("error"),
+        }
+        return
+    }
 
-//    }
+    fn new_with(sess: RcRef<Session>, exploit: &str) -> Self;
 
-//}
+}
 
 pub struct ExploitModule {
     sess: RcRef<Session>,
 }
 
-impl ExploitModule {
-    pub fn new_with(sess: RcRef<Session>, exploit: &str) -> ExploitModule {
-        ExploitModule { sess }
+impl MsfModule for ExploitModule {
+    fn new_with(sess: RcRef<Session>, exploit: &str) -> Self {
+        ExploitModule::init(&sess, "exploit", exploit);
+        ExploitModule { sess: sess }
     }
 
 }

@@ -19,3 +19,10 @@ pub struct CoreVersion {
 pub struct ModuleExploits {
     pub modules: Vec<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ModuleInfo {
+    pub name: String,
+    pub description: String,
+    pub license: String,
+}

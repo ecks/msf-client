@@ -22,7 +22,9 @@ fn main() {
                     },
     };
 
-    match client.modules().exploits() {
+    let mut mod_man = client.modules();
+
+    match mod_man.exploits() {
         Ok(res) => { let mod_names = &res.modules;
                      for mod_name in mod_names {
                          println!("{}", mod_name);
@@ -34,4 +36,7 @@ fn main() {
                     },
 
     };
+
+    let mut exp_mod = mod_man.use_exploit("unix/ftp/vsftpd_234_backdoor");
+    return
 }
