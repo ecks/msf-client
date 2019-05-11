@@ -83,12 +83,30 @@ impl Msg for ModuleInfo {
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DisPayHandlr {
+    pub required: bool,
     pub desc: String,
+    pub default: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RHosts {
+    pub required: bool,
+    pub desc: String,
+    pub default: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RPort {
+    pub required: bool,
+    pub desc: String,
+    pub default: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ModuleOptions {
     pub DisablePayloadHandler: DisPayHandlr,
+    pub RHOSTS: RHosts,
+    pub RPORT: RPort,
 }
 
 impl Msg for ModuleOptions {

@@ -68,29 +68,26 @@ impl CoreManager {
 }
 
 trait MsfModule {
-    fn init(sess: &RcRef<Session>, mtype: &str, mname: &str) {
+    fn init(sess: &RcRef<Session>, mtype: &str, mname: &str) -> (ModuleInfo,ModuleOptions) {
+        // get module info
         let mut args: Vec<&str> = Vec::new();
         args.push(mtype);
         args.push(mname);
-        match sess.borrow_mut().execute(ModuleInfo::mn(), args).unwrap() {
-            MsgType::WithModuleInfo(mi) => { println!("{}", mi.name);
-                                                    println!("{}", mi.description);
-                                                    println!("{}", mi.license)
-                                                  },
-            _ => println!("error"),
-        }
+        let mi = match sess.borrow_mut().execute(ModuleInfo::mn(), args).unwrap() {
+            MsgType::WithModuleInfo(mi) => Ok(mi),
+            _ => Err("error"),
+        };
 
+        // get module options
         let mut args: Vec<&str> = Vec::new();
         args.push(mtype);
         args.push(mname);
-        match sess.borrow_mut().execute(ModuleOptions::mn(), args).unwrap() {
-            MsgType::WithModuleOptions(mo) => { let dis_pay_handler = mo.DisablePayloadHandler;
-                                                       println!("{}", dis_pay_handler.desc)
-                                              },
-            _ => println!("error"),
+        let mo = match sess.borrow_mut().execute(ModuleOptions::mn(), args).unwrap() {
+            MsgType::WithModuleOptions(mo) => Ok(mo),
+            _ => Err("error"),
  
-        }
-        return
+        };
+        return (mi.unwrap(),mo.unwrap())
     }
 
     fn new_with(sess: RcRef<Session>, mname: &str) -> Self;
@@ -98,6 +95,8 @@ trait MsfModule {
 }
 
 pub struct ExploitModule {
+    pub info: ModuleInfo, 
+    pub options: ModuleOptions,
     sess: RcRef<Session>,
     mname: String,
 }
@@ -116,8 +115,8 @@ impl ExploitModule {
 
 impl MsfModule for ExploitModule {
     fn new_with(sess: RcRef<Session>, mname: &str) -> Self {
-        ExploitModule::init(&sess, "exploit", mname);
-        ExploitModule { sess, mname: String::from(mname) }
+        let (mi,mo) = ExploitModule::init(&sess, "exploit", mname); 
+        ExploitModule { info: mi, options: mo, sess, mname: String::from(mname) }
     }
 
 

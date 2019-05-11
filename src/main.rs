@@ -39,6 +39,22 @@ fn main() {
 
     let mut exp_mod = mod_man.use_exploit("unix/ftp/vsftpd_234_backdoor");
 
+    println!("{}", exp_mod.info.name);
+    println!("{}", exp_mod.info.description);
+    println!("{}", exp_mod.info.license);
+
+    println!("{}", exp_mod.options.DisablePayloadHandler.required);
+    println!("{}", exp_mod.options.DisablePayloadHandler.desc);
+    println!("{:?}", exp_mod.options.DisablePayloadHandler.default);
+    
+    println!("{}", exp_mod.options.RHOSTS.required);
+    println!("{}", exp_mod.options.RHOSTS.desc);
+    println!("{:?}", exp_mod.options.RHOSTS.default);
+
+    println!("{}", exp_mod.options.RPORT.required);
+    println!("{}", exp_mod.options.RPORT.desc);
+    println!("{:?}", exp_mod.options.RPORT.default);
+
     match exp_mod.payloads() {
         Ok(res) => { let pay_names = &res.payloads;
                      for pay_name in pay_names {
@@ -49,7 +65,6 @@ fn main() {
         Err(err) => { eprintln!("{}", err);
                       return
                     },
-
     };
 
     return
