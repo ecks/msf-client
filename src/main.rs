@@ -38,5 +38,19 @@ fn main() {
     };
 
     let mut exp_mod = mod_man.use_exploit("unix/ftp/vsftpd_234_backdoor");
+
+    match exp_mod.payloads() {
+        Ok(res) => { let pay_names = &res.payloads;
+                     for pay_name in pay_names {
+                         println!("{}",pay_name);
+                     };
+                     res
+                   }
+        Err(err) => { eprintln!("{}", err);
+                      return
+                    },
+
+    };
+
     return
 }
