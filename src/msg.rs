@@ -81,33 +81,17 @@ impl Msg for ModuleInfo {
         return "module.info"
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub struct DisPayHandlr {
-    pub required: bool,
-    pub desc: String,
-    pub default: Option<bool>,
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ModuleOption {
+  DefaultBool { r#type: String, required: bool, advanced: bool, desc: String, default: bool },
+  DefaultInt { r#type: String, required: bool, advanced: bool, desc: String, default: u32 },
+  DefaultEnum { r#type: String, required: bool, advanced: bool, desc: String, default: String, enums: Vec<String> },
+  NoDefault { r#type: String, required: bool, advanced: bool, desc: String },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RHosts {
-    pub required: bool,
-    pub desc: String,
-    pub default: Option<bool>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RPort {
-    pub required: bool,
-    pub desc: String,
-    pub default: Option<u32>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ModuleOptions {
-    pub DisablePayloadHandler: DisPayHandlr,
-    pub RHOSTS: RHosts,
-    pub RPORT: RPort,
-}
+pub type ModuleOptions = HashMap<String, ModuleOption>;
 
 impl Msg for ModuleOptions {
     fn mn() -> &'static str {

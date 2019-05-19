@@ -111,6 +111,10 @@ impl ExploitModule {
             _ => Err("incorrect type"),
         }
     }
+
+//    pub fn option(&mut self, opt: String) -> Res<ModuleOption> {
+
+//    }
 }
 
 impl MsfModule for ExploitModule {
