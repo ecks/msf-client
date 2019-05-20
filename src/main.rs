@@ -27,18 +27,18 @@ fn main() {
 
     let mut mod_man = client.modules();
 
-    match mod_man.exploits() {
-        Ok(res) => { let mod_names = &res.modules;
-                     for mod_name in mod_names {
-                         println!("{}", mod_name);
-                     };
-                     res
-                   }
-        Err(err) => { eprintln!("{}", err);
-                      return
-                    },
+//    match mod_man.exploits() {
+//        Ok(res) => { let mod_names = &res.modules;
+//                     for mod_name in mod_names {
+//                         println!("{}", mod_name);
+//                     };
+//                     res
+//                   }
+//        Err(err) => { eprintln!("{}", err);
+//                      return
+//                    },
 
-    };
+//    };
 
     let mut exp_mod = mod_man.use_exploit("unix/ftp/vsftpd_234_backdoor");
 
@@ -46,17 +46,14 @@ fn main() {
     println!("{}", exp_mod.info.description);
     println!("{}", exp_mod.info.license);
 
-//    println!("{}", exp_mod.options.DisablePayloadHandler.required);
-    println!("enter");
-    for (option_name, option) in &exp_mod.options {
-        println!("{}", option_name);
-        println!("{:?}", option);
-        match option {
-            ModuleOption::DefaultBool { r#type, required, advanced, desc, default } => println!("{}", required),
-            _ => println!("unknown"),
-        };
-    };
-    println!("exit");
+//    for (option_name, option) in &exp_mod.options {
+//        println!("{}", option_name);
+//        println!("{:?}", option);
+//        match option {
+//            ModuleOption::DefaultBool { r#type, required, advanced, desc, default } => println!("{}", required),
+//            _ => println!("unknown"),
+//        };
+//    };
 //    println!("{:?}", exp_mod.options.get("DisablePayloadHandler").unwrap().get("required"));
 //    println!("{}", exp_mod.options.DisablePayloadHandler.desc);
 //    println!("{:?}", exp_mod.options.get("DisablePayloadHandler").unwrap().get("desc"));
