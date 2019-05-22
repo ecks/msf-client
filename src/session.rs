@@ -8,9 +8,11 @@ use reqwest::header;
 use crate::common::Res;
 
 use crate::msg::Msg;
-use crate::msg::MsgType;
+use crate::msg::AuthLoginCmd;
+use crate::msg::CmdType;
+use crate::msg::RetType;
 
-use crate::msg::AuthLogin;
+use crate::msg::AuthLoginRet;
 
 
 pub struct Session {
@@ -20,7 +22,7 @@ pub struct Session {
 
 impl Session {
 
-    pub fn execute<'a>(&mut self, method: &'static str, args: Vec<&'a str>) -> Res<MsgType> {
+    pub fn execute<'a>(&mut self, method: &'static str, args: Vec<&'a str>) -> Res<RetType> {
 
         // clone args so that we may insert stuff in there
         let mut argsc = args.clone();
@@ -36,7 +38,13 @@ impl Session {
         }
         let mut buf = Vec::new();
 
-        argsc.serialize(&mut Serializer::new(&mut buf)).unwrap();
+        if method == "auth.login" {
+            let auth_login = AuthLoginCmd(String::from(argsc[0]), String::from(argsc[1]), String::from(argsc[2]));
+            auth_login.serialize(&mut Serializer::new(&mut buf)).unwrap();
+        }
+        else {
+            argsc.serialize(&mut Serializer::new(&mut buf)).unwrap();
+        }
 
         let mut headers = header::HeaderMap::new();
         headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static("binary/message-pack"));
@@ -71,37 +79,35 @@ impl Session {
                 "auth.login" => {
                     let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                    Ok(MsgType::WithAuthLogin(de_str))
+                    Ok(RetType::WAuthLoginRet(de_str))
                 },
                 "core.version" => {
                     let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                    Ok(MsgType::WithCoreVersion(de_str))
+                    Ok(RetType::WCoreVersionRet(de_str))
                 },
                 "module.exploits" => {
                     let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                    Ok(MsgType::WithModuleExploits(de_str))
+                    Ok(RetType::WModuleExploitsRet(de_str))
                 },
                 "module.info" => {
                     let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                    Ok(MsgType::WithModuleInfo(de_str))
+                    Ok(RetType::WModuleInfoRet(de_str))
                 },
                 "module.options" => {
                     let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                    Ok(MsgType::WithModuleOptions(de_str))
+                    Ok(RetType::WModuleOptionsRet(de_str))
                 },
                 "module.target_compatible_payloads" => {
                     let de_str = Deserialize::deserialize(&mut de).unwrap();
         
-                    Ok(MsgType::WithModuleTargetCompatiblePayloads(de_str))
+                    Ok(RetType::WModuleTargetCompatiblePayloadsRet(de_str))
                 },
                 _ => {
-                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-        
-                    Ok(MsgType::WithString(de_str))
+                    Err("Unknown command")
                 },
             }
         } else {
@@ -109,9 +115,9 @@ impl Session {
         }
     }
 
-    fn authenticate(&mut self, username: &str, password: &str) -> Res<MsgType> {
+    fn authenticate(&mut self, username: &str, password: &str) -> Res<RetType> {
         let args = vec![username, password];
-        self.execute(AuthLogin::mn(), args)
+        self.execute(AuthLoginRet::mn(), args)
     }
 
     pub fn new(username: &str, password: &str, host: String) -> Res<Session> {
@@ -120,7 +126,7 @@ impl Session {
 
 
         let response = match sess.authenticate(username, password).unwrap() {
-            MsgType::WithAuthLogin(sm) => sm,
+            RetType::WAuthLoginRet(sm) => sm,
             _ => return Err("incorrect type"),
 
         };

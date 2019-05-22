@@ -2,7 +2,7 @@
 
 extern crate msf_client;
 
-use msf_client::msg::ModuleOption;
+use msf_client::msg::ModuleOptionRet;
 use msf_client::MsfClient;
 
 

@@ -10,73 +10,77 @@ pub trait Msg {
     fn mn() -> &'static str;
 }
 
-//type SessionMapVec = HashMap<String, Vec<String>>;
-type SessionMap = HashMap<String, String>;
 
-pub enum MsgType {
-    WithAuthLogin(AuthLogin),
-    WithCoreVersion(CoreVersion),
-    WithModuleExploits(ModuleExploits),
-    WithModuleInfo(ModuleInfo),
-    WithModuleOptions(ModuleOptions),
-    WithModuleTargetCompatiblePayloads(ModuleTargetCompatiblePayloads),
-//    WithVec(SessionMapVec),
-    WithString(SessionMap),
+#[derive(Serialize, Debug)]
+pub enum CmdType {
+    WAuthLoginCmd(AuthLoginCmd),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AuthLogin {
+#[derive(Serialize, Debug)]
+pub struct AuthLoginCmd(pub String, pub String, pub String);
+
+pub enum RetType {
+    WAuthLoginRet(AuthLoginRet),
+    WCoreVersionRet(CoreVersionRet),
+    WModuleExploitsRet(ModuleExploitsRet),
+    WModuleInfoRet(ModuleInfoRet),
+    WModuleOptionsRet(ModuleOptionsRet),
+    WModuleTargetCompatiblePayloadsRet(ModuleTargetCompatiblePayloadsRet),
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AuthLoginRet {
     pub result: String,
     pub token: String,
 }
 
-impl Msg for AuthLogin {
+impl Msg for AuthLoginRet {
     fn mn() -> &'static str {
         "auth.login"
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CoreVersion {
+#[derive(Deserialize, Debug)]
+pub struct CoreVersionRet {
     pub version: String,
     pub ruby: String,
     pub api: String,
 }
 
-impl Msg for CoreVersion {
+impl Msg for CoreVersionRet {
     fn mn() -> &'static str {
         return "core.version"
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ModuleExploits {
+#[derive(Deserialize, Debug)]
+pub struct ModuleExploitsRet {
     pub modules: Vec<String>,
 }
 
-impl Msg for ModuleExploits {
+impl Msg for ModuleExploitsRet {
     fn mn() -> &'static str {
         return "module.exploits"
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ModulePayloads {
+#[derive(Deserialize, Debug)]
+pub struct ModulePayloadsRet {
     pub payloads: Vec<String>,
 }
 
-impl Msg for ModulePayloads {
+impl Msg for ModulePayloadsRet {
     fn mn() -> &'static str {
         return "module.payloads"
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ModuleInfo {
+#[derive(Deserialize, Debug)]
+pub struct ModuleInfoRet {
     pub name: String,
     pub description: String,
     pub license: String,
     pub default_target: u32,
 }
 
-impl Msg for ModuleInfo {
+impl Msg for ModuleInfoRet {
     fn mn() -> &'static str {
         return "module.info"
     }
@@ -84,27 +88,27 @@ impl Msg for ModuleInfo {
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
-pub enum ModuleOption {
+pub enum ModuleOptionRet {
   DefaultBool { r#type: String, required: bool, advanced: bool, desc: String, default: bool },
   DefaultInt { r#type: String, required: bool, advanced: bool, desc: String, default: u32 },
   DefaultEnum { r#type: String, required: bool, advanced: bool, desc: String, default: String, enums: Vec<String> },
   NoDefault { r#type: String, required: bool, advanced: bool, desc: String },
 }
 
-pub type ModuleOptions = HashMap<String, ModuleOption>;
+pub type ModuleOptionsRet = HashMap<String, ModuleOptionRet>;
 
-impl Msg for ModuleOptions {
+impl Msg for ModuleOptionsRet {
     fn mn() -> &'static str {
         return "module.options"
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ModuleTargetCompatiblePayloads {
+#[derive(Deserialize, Debug)]
+pub struct ModuleTargetCompatiblePayloadsRet {
     pub payloads: Vec<String>,
 }
 
-impl Msg for ModuleTargetCompatiblePayloads {
+impl Msg for ModuleTargetCompatiblePayloadsRet {
     fn mn() -> &'static str {
         return "module.target_compatible_payloads"
     }

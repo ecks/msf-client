@@ -16,14 +16,14 @@ use common::Res;
 use common::RcRef;
 
 use msg::Msg;
-use msg::MsgType;
+use msg::RetType;
 
-use msg::CoreVersion;
-use msg::ModuleExploits;
-use msg::ModuleInfo;
-use msg::ModuleOption;
-use msg::ModuleOptions;
-use msg::ModuleTargetCompatiblePayloads;
+use msg::CoreVersionRet;
+use msg::ModuleExploitsRet;
+use msg::ModuleInfoRet;
+use msg::ModuleOptionRet;
+use msg::ModuleOptionsRet;
+use msg::ModuleTargetCompatiblePayloadsRet;
 
 
 
@@ -61,9 +61,9 @@ pub struct CoreManager {
 
 impl CoreManager {
 
-    pub fn version(&mut self) -> Res<CoreVersion> {
-        match self.sess.borrow_mut().execute(CoreVersion::mn(), Vec::new()).unwrap() {
-            MsgType::WithCoreVersion(sm) => Ok(sm),
+    pub fn version(&mut self) -> Res<CoreVersionRet> {
+        match self.sess.borrow_mut().execute(CoreVersionRet::mn(), Vec::new()).unwrap() {
+            RetType::WCoreVersionRet(sm) => Ok(sm),
             _ => Err("incorrect type"),
         }
     }
@@ -73,13 +73,13 @@ type ReqOptions = Vec<String>;
 type RunOptions = HashMap<String,String>;
 
 trait MsfModule {
-    fn init(sess: &RcRef<Session>, mtype: &str, mname: &str) -> (ModuleInfo,ModuleOptions,Vec<String>,HashMap<String,String>) {
+    fn init(sess: &RcRef<Session>, mtype: &str, mname: &str) -> (ModuleInfoRet,ModuleOptionsRet,Vec<String>,HashMap<String,String>) {
         // get module info
         let mut args: Vec<&str> = Vec::new();
         args.push(mtype);
         args.push(mname);
-        let mi = match sess.borrow_mut().execute(ModuleInfo::mn(), args).unwrap() {
-            MsgType::WithModuleInfo(mi) => Ok(mi),
+        let mi = match sess.borrow_mut().execute(ModuleInfoRet::mn(), args).unwrap() {
+            RetType::WModuleInfoRet(mi) => Ok(mi),
             _ => Err("error"),
         };
 
@@ -87,8 +87,8 @@ trait MsfModule {
         let mut args: Vec<&str> = Vec::new();
         args.push(mtype);
         args.push(mname);
-        let mo = match sess.borrow_mut().execute(ModuleOptions::mn(), args).unwrap() {
-            MsgType::WithModuleOptions(mo) => Ok(mo),
+        let mo = match sess.borrow_mut().execute(ModuleOptionsRet::mn(), args).unwrap() {
+            RetType::WModuleOptionsRet(mo) => Ok(mo),
             _ => Err("error"),
  
         };
@@ -101,43 +101,52 @@ trait MsfModule {
 
         for (option_name, option_val) in &mo_res {
             match option_val {
-              ModuleOption::NoDefault { r#type, required, .. } | ModuleOption::DefaultInt { r#type, required, .. } | ModuleOption::DefaultBool { r#type, required, .. } | ModuleOption::DefaultEnum { r#type, required, .. } if *required == true => req_options.push(option_name.clone()),
+              // very ugly, refactor if possible
+              ModuleOptionRet::NoDefault { r#type, required, .. } | ModuleOptionRet::DefaultInt { r#type, required, .. } | ModuleOptionRet::DefaultBool { r#type, required, .. } | ModuleOptionRet::DefaultEnum { r#type, required, .. } if *required == true => req_options.push(option_name.clone()),
               _ => ()
             };
 
             match option_val {
-              ModuleOption::DefaultInt { r#type, required,  advanced, desc, default} => run_options.insert(option_name.clone(), default.to_string()),
-              ModuleOption::DefaultBool { r#type, required, advanced, desc, default: true } => run_options.insert(option_name.clone(), String::from("true")), 
-              ModuleOption::DefaultBool { r#type, required, advanced, desc, default: false } => run_options.insert(option_name.clone(), String::from("false")), 
-              ModuleOption::DefaultEnum { r#type, required, advanced, desc, default, .. } => run_options.insert(option_name.clone(), default.to_string()),
+              ModuleOptionRet::DefaultInt { r#type, required,  advanced, desc, default} => run_options.insert(option_name.clone(), default.to_string()),
+              ModuleOptionRet::DefaultBool { r#type, required, advanced, desc, default: true } => run_options.insert(option_name.clone(), String::from("true")), 
+              ModuleOptionRet::DefaultBool { r#type, required, advanced, desc, default: false } => run_options.insert(option_name.clone(), String::from("false")), 
+              ModuleOptionRet::DefaultEnum { r#type, required, advanced, desc, default, .. } => run_options.insert(option_name.clone(), default.to_string()),
               _ => None
             };
         }
         return (mi_res,mo_res,req_options,run_options)
     }
 
+//    fn exploit(&mut self) -> Res<MsgType> {
+//        let mut args: Vec<&str> = Vec::new();
+//        args.push(self.mtype.as_str());
+//        args.push(self.mname.as_str());
+//        self.sess.borrow_mut().execute("module.execute", 
+
+//    }
+
     fn new_with(sess: RcRef<Session>, mname: &str) -> Self;
-    fn runoptions(&mut self) -> Res<&RunOptions>;
 
 }
 
 
 pub struct ExploitModule {
-    pub info: ModuleInfo, 
-    pub options: ModuleOptions,
+    pub info: ModuleInfoRet,
+    pub options: ModuleOptionsRet,
     pub req_options: ReqOptions,
     run_options: RunOptions,
     sess: RcRef<Session>,
+    mtype: String,
     mname: String,
 }
 
 impl ExploitModule {
-    pub fn payloads(&mut self) -> Res<ModuleTargetCompatiblePayloads> {
+    pub fn payloads(&mut self) -> Res<ModuleTargetCompatiblePayloadsRet> {
         let mut args: Vec<&str> = Vec::new();
         args.push(self.mname.as_str());
         args.push("0");
-        match self.sess.borrow_mut().execute(ModuleTargetCompatiblePayloads::mn(), args).unwrap() {
-            MsgType::WithModuleTargetCompatiblePayloads(mtce) => Ok(mtce),
+        match self.sess.borrow_mut().execute(ModuleTargetCompatiblePayloadsRet::mn(), args).unwrap() {
+            RetType::WModuleTargetCompatiblePayloadsRet(mtce) => Ok(mtce),
             _ => Err("incorrect type"),
         }
     }
@@ -149,14 +158,10 @@ impl ExploitModule {
 
 impl MsfModule for ExploitModule {
     fn new_with(sess: RcRef<Session>, mname: &str) -> Self {
+        let mtype = String::from("exploit");
         let (mi,mo,req_o,run_o) = ExploitModule::init(&sess, "exploit", mname); 
-        ExploitModule { info: mi, options: mo, req_options: req_o, run_options: run_o, sess, mname: String::from(mname) }
+        ExploitModule { info: mi, options: mo, req_options: req_o, run_options: run_o, sess, mtype: mtype, mname: String::from(mname) }
     }
-
-    fn runoptions(&mut self) -> Res<&RunOptions> {
-        Ok(&self.run_options)
-    }
-
 
 }
 
@@ -166,9 +171,9 @@ pub struct ModuleManager {
 
 impl ModuleManager {
 
-    pub fn exploits(&mut self) -> Res<ModuleExploits> {
-        match self.sess.borrow_mut().execute(ModuleExploits::mn(), Vec::new()).unwrap() {
-            MsgType::WithModuleExploits(me) => Ok(me),
+    pub fn exploits(&mut self) -> Res<ModuleExploitsRet> {
+        match self.sess.borrow_mut().execute(ModuleExploitsRet::mn(), Vec::new()).unwrap() {
+            RetType::WModuleExploitsRet(me) => Ok(me),
             _ => Err("incorrect type"),
         }
     }
