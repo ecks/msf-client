@@ -16,13 +16,19 @@ use common::Res;
 use common::RcRef;
 
 use msg::Msg;
+use msg::CmdType;
 use msg::RetType;
 
-use msg::CoreVersionRet;
+use msg::CoreVerCmd;
+use msg::CoreVerRet;
+use msg::ModuleExploitsCmd;
 use msg::ModuleExploitsRet;
+use msg::ModuleInfoCmd;
 use msg::ModuleInfoRet;
+use msg::ModuleOptionsCmd;
 use msg::ModuleOptionRet;
 use msg::ModuleOptionsRet;
+use msg::ModuleTargetCompatiblePayloadsCmd;
 use msg::ModuleTargetCompatiblePayloadsRet;
 
 
@@ -61,9 +67,10 @@ pub struct CoreManager {
 
 impl CoreManager {
 
-    pub fn version(&mut self) -> Res<CoreVersionRet> {
-        match self.sess.borrow_mut().execute(CoreVersionRet::mn(), Vec::new()).unwrap() {
-            RetType::WCoreVersionRet(sm) => Ok(sm),
+    pub fn version(&mut self) -> Res<CoreVerRet> {
+        let cmd = CmdType::WCoreVerCmd(CoreVerCmd::new());
+        match self.sess.borrow_mut().execute(cmd).unwrap() {
+            RetType::WCoreVerRet(sm) => Ok(sm),
             _ => Err("incorrect type"),
         }
     }
@@ -75,19 +82,15 @@ type RunOptions = HashMap<String,String>;
 trait MsfModule {
     fn init(sess: &RcRef<Session>, mtype: &str, mname: &str) -> (ModuleInfoRet,ModuleOptionsRet,Vec<String>,HashMap<String,String>) {
         // get module info
-        let mut args: Vec<&str> = Vec::new();
-        args.push(mtype);
-        args.push(mname);
-        let mi = match sess.borrow_mut().execute(ModuleInfoRet::mn(), args).unwrap() {
+        let cmd = CmdType::WModuleInfoCmd(ModuleInfoCmd::new(String::from(mtype), String::from(mname)));
+        let mi = match sess.borrow_mut().execute(cmd).unwrap() {
             RetType::WModuleInfoRet(mi) => Ok(mi),
             _ => Err("error"),
         };
 
         // get module options
-        let mut args: Vec<&str> = Vec::new();
-        args.push(mtype);
-        args.push(mname);
-        let mo = match sess.borrow_mut().execute(ModuleOptionsRet::mn(), args).unwrap() {
+        let cmd = CmdType::WModuleOptionsCmd(ModuleOptionsCmd::new(String::from(mtype), String::from(mname)));
+        let mo = match sess.borrow_mut().execute(cmd).unwrap() {
             RetType::WModuleOptionsRet(mo) => Ok(mo),
             _ => Err("error"),
  
@@ -145,7 +148,8 @@ impl ExploitModule {
         let mut args: Vec<&str> = Vec::new();
         args.push(self.mname.as_str());
         args.push("0");
-        match self.sess.borrow_mut().execute(ModuleTargetCompatiblePayloadsRet::mn(), args).unwrap() {
+        let cmd = CmdType::WModuleTargetCompatiblePayloadsCmd(ModuleTargetCompatiblePayloadsCmd::new(self.mname.clone(), String::from("0")));
+        match self.sess.borrow_mut().execute(cmd).unwrap() {
             RetType::WModuleTargetCompatiblePayloadsRet(mtce) => Ok(mtce),
             _ => Err("incorrect type"),
         }
@@ -172,7 +176,8 @@ pub struct ModuleManager {
 impl ModuleManager {
 
     pub fn exploits(&mut self) -> Res<ModuleExploitsRet> {
-        match self.sess.borrow_mut().execute(ModuleExploitsRet::mn(), Vec::new()).unwrap() {
+        let cmd = CmdType::WModuleExploitsCmd(ModuleExploitsCmd::new());
+        match self.sess.borrow_mut().execute(cmd).unwrap() {
             RetType::WModuleExploitsRet(me) => Ok(me),
             _ => Err("incorrect type"),
         }

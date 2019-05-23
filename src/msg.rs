@@ -1,6 +1,5 @@
 use std::str;
 use std::collections::HashMap;
-
 use serde::{Serialize,Deserialize};
 
 // reference: https://metasploit.help.rapid7.com/docs/standard-api-methods-reference
@@ -14,14 +13,128 @@ pub trait Msg {
 #[derive(Serialize, Debug)]
 pub enum CmdType {
     WAuthLoginCmd(AuthLoginCmd),
+    WCoreVerCmd(CoreVerCmd),
+    WModuleExploitsCmd(ModuleExploitsCmd),
+    WModuleInfoCmd(ModuleInfoCmd),
+    WModuleOptionsCmd(ModuleOptionsCmd),
+    WModuleTargetCompatiblePayloadsCmd(ModuleTargetCompatiblePayloadsCmd),
+}
+
+
+#[derive(Serialize, Debug)]
+pub struct AuthLoginCmd(String, String, String);
+
+impl AuthLoginCmd {
+    pub fn new(uname: String, pswd: String) -> Self {
+        let mn = String::from("auth.login");
+        AuthLoginCmd(mn, uname, pswd)
+    }
+}
+
+pub trait Tokenize {
+    fn add_token(&mut self, token: String);
 }
 
 #[derive(Serialize, Debug)]
-pub struct AuthLoginCmd(pub String, pub String, pub String);
+pub struct CoreVerCmd(String, Option<String>);
+
+impl CoreVerCmd {
+    pub fn new() -> Self {
+        let mn = String::from("core.version");
+        CoreVerCmd(mn, None)
+    }
+}
+
+impl Tokenize for CoreVerCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleExploitsCmd(String, Option<String>);
+
+impl ModuleExploitsCmd {
+    pub fn new() -> Self {
+        let mn = String::from("module.exploits");
+        ModuleExploitsCmd(mn, None)
+    }
+}
+
+impl Tokenize for ModuleExploitsCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModulePayloadsCmd(String, Option<String>);
+
+impl ModulePayloadsCmd {
+    pub fn new() -> Self {
+        let mn = String::from("module.payloads");
+        ModulePayloadsCmd(mn, None)
+    }
+}
+
+impl Tokenize for ModulePayloadsCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleInfoCmd(String, Option<String>, String, String);
+
+impl ModuleInfoCmd {
+    pub fn new(mtype: String, mname: String) -> Self {
+        let mn = String::from("module.info");
+        ModuleInfoCmd(mn, None, mtype, mname)
+    }
+}
+
+impl Tokenize for ModuleInfoCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleOptionsCmd(String, Option<String>, String, String);
+
+impl ModuleOptionsCmd {
+    pub fn new(mtype: String, mname: String) -> Self {
+        let mn = String::from("module.options");
+        ModuleOptionsCmd(mn, None, mtype, mname)
+    }
+}
+
+impl Tokenize for ModuleOptionsCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleTargetCompatiblePayloadsCmd(String, Option<String>, String, String);
+
+impl ModuleTargetCompatiblePayloadsCmd {
+    // target id: (default: 0, e.g. 'Automatic')
+    pub fn new(mname: String, target_id: String) -> Self {
+        let mn = String::from("module.target_compatible_payloads");
+        ModuleTargetCompatiblePayloadsCmd(mn, None, mname, target_id)
+    }
+}
+
+impl Tokenize for ModuleTargetCompatiblePayloadsCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
 
 pub enum RetType {
     WAuthLoginRet(AuthLoginRet),
-    WCoreVersionRet(CoreVersionRet),
+    WCoreVerRet(CoreVerRet),
     WModuleExploitsRet(ModuleExploitsRet),
     WModuleInfoRet(ModuleInfoRet),
     WModuleOptionsRet(ModuleOptionsRet),
@@ -41,13 +154,13 @@ impl Msg for AuthLoginRet {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct CoreVersionRet {
+pub struct CoreVerRet {
     pub version: String,
     pub ruby: String,
     pub api: String,
 }
 
-impl Msg for CoreVersionRet {
+impl Msg for CoreVerRet {
     fn mn() -> &'static str {
         return "core.version"
     }
