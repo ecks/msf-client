@@ -8,18 +8,17 @@ use reqwest::header;
 
 use crate::common::Res;
 
-use crate::msg::Msg;
 use crate::msg::Tokenize;
 use crate::msg::AuthLoginCmd;
 use crate::msg::CmdType;
 use crate::msg::RetType;
 
-pub struct Session {
+pub struct Conn {
     host: String,
     token: Option<String>,
 }
 
-impl Session {
+impl Conn {
 
     // internal
     fn connect_and_exec<'a>(&mut self, buf: Vec<u8>, body_buf: &'a mut Vec<u8>) -> Res<Deserializer<ReadReader<&'a [u8]>>> {
@@ -112,6 +111,15 @@ impl Session {
                                                         };
                                                         let de_str = Deserialize::deserialize(&mut de).unwrap();
                                                         Ok(RetType::WModuleOptionsRet(de_str)) },
+            CmdType::WModuleExecuteCmd(ref mut mec) => { mec.add_token(token);
+                                                         mec.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                         let mut body_buf: Vec<u8> = vec![];
+                                                         let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                             Ok(res) => res,
+                                                             Err(err_str) => return Err(err_str),
+                                                         };
+                                                         let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                         Ok(RetType::WModuleExecuteRet(de_str)) },
             CmdType::WModuleTargetCompatiblePayloadsCmd(ref mut mtcp) => { mtcp.add_token(token);
                                                                            mtcp.serialize(&mut Serializer::new(&mut buf)).unwrap();
                                                                            let mut body_buf: Vec<u8> = vec![];
@@ -121,6 +129,51 @@ impl Session {
                                                                            };
                                                                            let de_str = Deserialize::deserialize(&mut de).unwrap();
                                                                            Ok(RetType::WModuleTargetCompatiblePayloadsRet(de_str)) },
+            CmdType::WSessionMeterpreterReadCmd(ref mut sr) => { sr.add_token(token);
+                                                      sr.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                      let mut body_buf: Vec<u8> = vec![];
+                                                      let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                        Ok(res) => res,
+                                                        Err(err_str) => return Err(err_str),
+                                                      };
+                                                      let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                      Ok(RetType::WSessionMeterpreterReadRet(de_str)) },
+            CmdType::WSessionShellReadCmd(ref mut sr) => { sr.add_token(token);
+                                                      sr.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                      let mut body_buf: Vec<u8> = vec![];
+                                                      let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                        Ok(res) => res,
+                                                        Err(err_str) => return Err(err_str),
+                                                      };
+                                                      let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                      Ok(RetType::WSessionShellReadRet(de_str)) },
+            CmdType::WSessionMeterpreterWriteCmd(ref mut sw) => { sw.add_token(token);
+                                                      sw.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                      let mut body_buf: Vec<u8> = vec![];
+                                                      let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                        Ok(res) => res,
+                                                        Err(err_str) => return Err(err_str),
+                                                      };
+                                                      let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                      Ok(RetType::WSessionMeterpreterWriteRet(de_str)) },
+            CmdType::WSessionShellWriteCmd(ref mut sw) => { sw.add_token(token);
+                                                      sw.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                      let mut body_buf: Vec<u8> = vec![];
+                                                      let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                        Ok(res) => res,
+                                                        Err(err_str) => return Err(err_str),
+                                                      };
+                                                      let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                      Ok(RetType::WSessionShellWriteRet(de_str)) },
+            CmdType::WSessionListCmd(ref mut sl) => { sl.add_token(token);
+                                                      sl.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                      let mut body_buf: Vec<u8> = vec![];
+                                                      let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                        Ok(res) => res,
+                                                        Err(err_str) => return Err(err_str),
+                                                      };
+                                                      let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                      Ok(RetType::WSessionListRet(de_str)) },
             _ => return Err("unknown command")
         }
 //            match cmd {
@@ -166,8 +219,8 @@ impl Session {
         self.execute(cmd)
     }
 
-    pub fn new(username: &str, password: &str, host: String) -> Res<Session> {
-        let mut sess = Session { host, token: None };
+    pub fn new(username: &str, password: &str, host: String) -> Res<Conn> {
+        let mut sess = Conn { host, token: None };
 
 
 

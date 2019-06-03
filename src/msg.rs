@@ -2,13 +2,9 @@ use std::str;
 use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
 
+use crate::common::RunOptions;
+
 // reference: https://metasploit.help.rapid7.com/docs/standard-api-methods-reference
-
-pub trait Msg {
-    // Module name
-    fn mn() -> &'static str;
-}
-
 
 #[derive(Serialize, Debug)]
 pub enum CmdType {
@@ -17,7 +13,13 @@ pub enum CmdType {
     WModuleExploitsCmd(ModuleExploitsCmd),
     WModuleInfoCmd(ModuleInfoCmd),
     WModuleOptionsCmd(ModuleOptionsCmd),
+    WModuleExecuteCmd(ModuleExecuteCmd),
     WModuleTargetCompatiblePayloadsCmd(ModuleTargetCompatiblePayloadsCmd),
+    WSessionMeterpreterReadCmd(SessionMeterpreterReadCmd),
+    WSessionShellReadCmd(SessionShellReadCmd),
+    WSessionMeterpreterWriteCmd(SessionMeterpreterWriteCmd),
+    WSessionShellWriteCmd(SessionShellWriteCmd),
+    WSessionListCmd(SessionListCmd),
 }
 
 
@@ -116,6 +118,22 @@ impl Tokenize for ModuleOptionsCmd {
 }
 
 #[derive(Serialize, Debug)]
+pub struct ModuleExecuteCmd(String, Option<String>, String, String, RunOptions);
+
+impl ModuleExecuteCmd {
+    pub fn new(mtype: String, mname: String, r_options: RunOptions) -> Self {
+        let mn = String::from("module.execute");
+        ModuleExecuteCmd(mn, None, mtype, mname, r_options)
+    }
+}
+
+impl Tokenize for ModuleExecuteCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
 pub struct ModuleTargetCompatiblePayloadsCmd(String, Option<String>, String, String);
 
 impl ModuleTargetCompatiblePayloadsCmd {
@@ -132,25 +150,105 @@ impl Tokenize for ModuleTargetCompatiblePayloadsCmd {
     }
 }
 
+#[derive(Serialize, Debug)]
+pub struct SessionMeterpreterReadCmd(String, Option<String>, u32);
+
+impl SessionMeterpreterReadCmd {
+    pub fn new(id: u32) -> Self {
+        let mn = String::from("session.meterpreter_read");
+        SessionMeterpreterReadCmd(mn, None, id)
+    }
+}
+
+impl Tokenize for SessionMeterpreterReadCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct SessionShellReadCmd(String, Option<String>, u32);
+
+impl SessionShellReadCmd {
+    pub fn new(id: u32) -> Self {
+        let mn = String::from("session.shell_read");
+        SessionShellReadCmd(mn, None, id)
+    }
+}
+
+impl Tokenize for SessionShellReadCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct SessionMeterpreterWriteCmd(String, Option<String>, u32, String);
+
+impl SessionMeterpreterWriteCmd {
+    pub fn new(id: u32, data: String) -> Self {
+        let mn = String::from("session.meterpreter_write");
+        SessionMeterpreterWriteCmd(mn, None, id, data)
+    }
+}
+
+impl Tokenize for SessionMeterpreterWriteCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct SessionShellWriteCmd(String, Option<String>, u32, String);
+
+impl SessionShellWriteCmd {
+    pub fn new(id: u32, data: String) -> Self {
+        let mn = String::from("session.shell_write");
+        SessionShellWriteCmd(mn, None, id, data)
+    }
+}
+
+impl Tokenize for SessionShellWriteCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct SessionListCmd(String, Option<String>);
+
+impl SessionListCmd {
+    pub fn new() -> Self {
+        let mn = String::from("session.list");
+        SessionListCmd(mn, None)
+    }
+}
+
+impl Tokenize for SessionListCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
 pub enum RetType {
     WAuthLoginRet(AuthLoginRet),
     WCoreVerRet(CoreVerRet),
     WModuleExploitsRet(ModuleExploitsRet),
     WModuleInfoRet(ModuleInfoRet),
     WModuleOptionsRet(ModuleOptionsRet),
+    WModuleExecuteRet(ModuleExecuteRet),
     WModuleTargetCompatiblePayloadsRet(ModuleTargetCompatiblePayloadsRet),
+    WSessionMeterpreterReadRet(SessionMeterpreterReadRet),
+    WSessionShellReadRet(SessionShellReadRet),
+    WSessionMeterpreterWriteRet(SessionMeterpreterWriteRet),
+    WSessionShellWriteRet(SessionShellWriteRet),
+    WSessionListRet(SessionListRet),
 }
 
 #[derive(Deserialize, Debug)]
 pub struct AuthLoginRet {
     pub result: String,
     pub token: String,
-}
-
-impl Msg for AuthLoginRet {
-    fn mn() -> &'static str {
-        "auth.login"
-    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -160,43 +258,22 @@ pub struct CoreVerRet {
     pub api: String,
 }
 
-impl Msg for CoreVerRet {
-    fn mn() -> &'static str {
-        return "core.version"
-    }
-}
 #[derive(Deserialize, Debug)]
 pub struct ModuleExploitsRet {
     pub modules: Vec<String>,
 }
 
-impl Msg for ModuleExploitsRet {
-    fn mn() -> &'static str {
-        return "module.exploits"
-    }
-}
 #[derive(Deserialize, Debug)]
 pub struct ModulePayloadsRet {
     pub payloads: Vec<String>,
 }
 
-impl Msg for ModulePayloadsRet {
-    fn mn() -> &'static str {
-        return "module.payloads"
-    }
-}
 #[derive(Deserialize, Debug)]
 pub struct ModuleInfoRet {
     pub name: String,
     pub description: String,
     pub license: String,
     pub default_target: u32,
-}
-
-impl Msg for ModuleInfoRet {
-    fn mn() -> &'static str {
-        return "module.info"
-    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -210,10 +287,9 @@ pub enum ModuleOptionRet {
 
 pub type ModuleOptionsRet = HashMap<String, ModuleOptionRet>;
 
-impl Msg for ModuleOptionsRet {
-    fn mn() -> &'static str {
-        return "module.options"
-    }
+#[derive(Deserialize, Debug)]
+pub struct ModuleExecuteRet {
+    pub job_id: u32,
 }
 
 #[derive(Deserialize, Debug)]
@@ -221,8 +297,42 @@ pub struct ModuleTargetCompatiblePayloadsRet {
     pub payloads: Vec<String>,
 }
 
-impl Msg for ModuleTargetCompatiblePayloadsRet {
-    fn mn() -> &'static str {
-        return "module.target_compatible_payloads"
-    }
+#[derive(Deserialize, Debug)]
+pub struct SessionMeterpreterReadRet {
+    pub data: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct SessionShellReadRet {
+    pub seq: u32,
+    pub data: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SessionMeterpreterWriteRet {
+    pub write_count: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SessionShellWriteRet {
+    pub write_count: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SessionInfo {
+  pub r#type: String,
+  pub tunnel_local: String,
+  pub tunnel_peer: String,
+  pub via_exploit: String,
+  pub via_payload: String,
+  pub desc: String,
+  pub info: String,
+  pub workspace: String,
+  pub target_host: String,
+  pub username: String,
+  pub uuid: String,
+  pub exploit_uuid: String,
+  pub routes: String,
+}
+
+pub type SessionListRet = HashMap<u32, SessionInfo>;

