@@ -3,8 +3,7 @@ use rmp_serde::{Serializer,Deserializer};
 
 use rmp_serde::decode::ReadReader;
 
-use reqwest::Client;
-use reqwest::header;
+use reqwest::{Client,header};
 
 use crate::common::Res;
 
