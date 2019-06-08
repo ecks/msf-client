@@ -35,11 +35,7 @@ impl Conn {
             .send().unwrap();
 
         if res.status() == reqwest::StatusCode::OK {
-            println!("{:?}", res.headers().get(header::CONTENT_TYPE).unwrap().to_str());
-            println!("{:?}", res.content_length());
             let len_from_header = res.content_length().unwrap();
-
-
 
             // need to copy raw contents
             let copy_len = res.copy_to(body_buf).unwrap();
@@ -173,43 +169,7 @@ impl Conn {
                                                       };
                                                       let de_str = Deserialize::deserialize(&mut de).unwrap();
                                                       Ok(RetType::WSessionListRet(de_str)) },
-            _ => return Err("unknown command")
         }
-//            match cmd {
-//                CmdType::WAuthLoginCmd(_) => {
-//                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-//        
-//                    Ok(RetType::WAuthLoginRet(de_str))
-//                },
-//                CmdType::WCoreVerCmd(_) => {
-//                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-//        
-//                    Ok(RetType::WCoreVerRet(de_str))
-//                },
-//                CmdType::WModuleExploitsCmd(_) => {
-//                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-//        
-//                    Ok(RetType::WModuleExploitsRet(de_str))
-//                },
-//                CmdType::WModuleInfoCmd(_) => {
-//                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-//        
-//                    Ok(RetType::WModuleInfoRet(de_str))
-//                },
-//                CmdType::WModuleOptionsCmd(_) => {
-//                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-//        
-//                    Ok(RetType::WModuleOptionsRet(de_str))
-//                },
-//                CmdType::WModuleTargetCompatiblePayloadsCmd(_) => {
-//                    let de_str = Deserialize::deserialize(&mut de).unwrap();
-//        
-//                    Ok(RetType::WModuleTargetCompatiblePayloadsRet(de_str))
-//                },
-//                _ => {
-//                    Err("Unknown command")
-//                },
-//            }
     }
 
     // internal

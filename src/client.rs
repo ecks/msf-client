@@ -33,15 +33,15 @@ impl MsfClient {
     }
 
     pub fn core(&mut self) -> CoreManager {
-        CoreManager { conn: Rc::clone(&self.conn) }
+        CoreManager::new(Rc::clone(&self.conn))
     }
 
     pub fn modules(&mut self) -> ModuleManager {
-        ModuleManager { conn: Rc::clone(&self.conn) }
+        ModuleManager::new(Rc::clone(&self.conn))
     }
 
     pub fn sessions(&mut self) -> SessionManager {
-        SessionManager { conn: Rc::clone(&self.conn) }
+        SessionManager::new(Rc::clone(&self.conn))
     }
 }
 
@@ -50,6 +50,10 @@ pub struct CoreManager {
 }
 
 impl CoreManager {
+
+    fn new(conn: RcRef<Conn>) -> CoreManager {
+        CoreManager { conn }
+    }
 
     pub fn version(&mut self) -> Res<CoreVerRet> {
         let cmd = CmdType::WCoreVerCmd(CoreVerCmd::new());
@@ -71,6 +75,8 @@ pub trait MsfModule {
             _ => Err("error"),
         };
 
+        let mi_res = mi.unwrap();
+
         // get module options
         let cmd = CmdType::WModuleOptionsCmd(ModuleOptionsCmd::new(String::from(mtype), String::from(mname)));
         let mo = match conn.borrow_mut().execute(cmd).unwrap() {
@@ -79,7 +85,6 @@ pub trait MsfModule {
  
         };
 
-        let mi_res = mi.unwrap();
         let mo_res = mo.unwrap();
         
         let mut req_options = Vec::new();
@@ -158,6 +163,10 @@ pub struct ModuleManager {
 }
 
 impl ModuleManager {
+
+    fn new(conn: RcRef<Conn>) -> ModuleManager {
+        ModuleManager { conn }
+    }
 
     pub fn exploits(&mut self) -> Res<ModuleExploitsRet> {
         let cmd = CmdType::WModuleExploitsCmd(ModuleExploitsCmd::new());
@@ -266,6 +275,9 @@ pub struct SessionManager {
 }
 
 impl SessionManager {
+    fn new(conn: RcRef<Conn>) -> SessionManager {
+        SessionManager { conn }
+    }
 
     pub fn list(&mut self) -> Res<SessionListRet> {
         let cmd = CmdType::WSessionListCmd(SessionListCmd::new());
@@ -291,6 +303,4 @@ impl SessionManager {
             Err("error in list")
         }
     }
-
 }
-
