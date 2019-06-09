@@ -93,19 +93,19 @@ pub trait MsfModule {
         for (option_name, option_val) in &mo_res {
             match option_val {
               // very ugly, refactor if possible
-              ModuleOptionRet::NoDefault { r#type, required, .. } | ModuleOptionRet::DefaultInt { r#type, required, .. } | ModuleOptionRet::DefaultBool { r#type, required, .. } | ModuleOptionRet::DefaultEnum { r#type, required, .. } if *required == true => req_options.push(option_name.clone()),
+              ModuleOptionRet::NoDefault { required, .. } | ModuleOptionRet::DefaultInt { required, .. } | ModuleOptionRet::DefaultBool { required, .. } | ModuleOptionRet::DefaultEnum { required, .. } if *required => req_options.push(option_name.clone()),
               _ => ()
             };
 
             match option_val {
-              ModuleOptionRet::DefaultInt { r#type, required,  advanced, desc, default} => run_options.insert(option_name.clone(), default.to_string()),
-              ModuleOptionRet::DefaultBool { r#type, required, advanced, desc, default: true } => run_options.insert(option_name.clone(), String::from("true")), 
-              ModuleOptionRet::DefaultBool { r#type, required, advanced, desc, default: false } => run_options.insert(option_name.clone(), String::from("false")), 
-              ModuleOptionRet::DefaultEnum { r#type, required, advanced, desc, default, .. } => run_options.insert(option_name.clone(), default.to_string()),
+              ModuleOptionRet::DefaultInt { default, ..} => run_options.insert(option_name.clone(), default.to_string()),
+              ModuleOptionRet::DefaultBool { default: true, .. } => run_options.insert(option_name.clone(), String::from("true")), 
+              ModuleOptionRet::DefaultBool { default: false, .. } => run_options.insert(option_name.clone(), String::from("false")), 
+              ModuleOptionRet::DefaultEnum { default, .. } => run_options.insert(option_name.clone(), default.to_string()),
               _ => None
             };
         }
-        return (mi_res,mo_res,req_options,run_options)
+        (mi_res,mo_res,req_options,run_options)
     }
 
     fn exploit(&mut self) -> Res<ModuleExecuteRet>;
@@ -145,8 +145,8 @@ impl ExploitModule {
 impl MsfModule for ExploitModule {
     fn new_with(conn: RcRef<Conn>, mname: &str) -> Self {
         let mtype = String::from("exploit");
-        let (mi,mo,req_o,run_o) = ExploitModule::init(&conn, "exploit", mname); 
-        ExploitModule { info: mi, options: mo, req_options: req_o, run_options: run_o, conn, mtype: mtype, mname: String::from(mname) }
+        let (info,options,req_options,run_options) = ExploitModule::init(&conn, "exploit", mname); 
+        ExploitModule { info, options, req_options, run_options, conn, mtype, mname: String::from(mname) }
     }
 
     fn exploit(&mut self) -> Res<ModuleExecuteRet> {
@@ -287,13 +287,13 @@ impl SessionManager {
         }
     }
 
-    pub fn session(&mut self, id: &u32) -> Res<MsfSessionType> {
+    pub fn session(&mut self, id: u32) -> Res<MsfSessionType> {
         if let Ok(sl) = self.list() {
-            let s = sl.get(id).unwrap();
+            let s = sl.get(&id).unwrap();
             if s.r#type == "meterpreter" {
-                Ok(MsfSessionType::WMeterpreterSession(MeterpreterSession { conn: Rc::clone(&self.conn), id: *id }))
+                Ok(MsfSessionType::WMeterpreterSession(MeterpreterSession { conn: Rc::clone(&self.conn), id }))
             } else if s.r#type == "shell" {
-                Ok(MsfSessionType::WShellSession(ShellSession { conn: Rc::clone(&self.conn), id: *id }))
+                Ok(MsfSessionType::WShellSession(ShellSession { conn: Rc::clone(&self.conn), id }))
             } else {
                 Err("unknown session")
 

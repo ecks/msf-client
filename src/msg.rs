@@ -41,6 +41,7 @@ pub trait Tokenize {
 pub struct CoreVerCmd(String, Option<String>);
 
 impl CoreVerCmd {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mn = String::from("core.version");
         CoreVerCmd(mn, None)
@@ -57,6 +58,7 @@ impl Tokenize for CoreVerCmd {
 pub struct ModuleExploitsCmd(String, Option<String>);
 
 impl ModuleExploitsCmd {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mn = String::from("module.exploits");
         ModuleExploitsCmd(mn, None)
@@ -73,6 +75,7 @@ impl Tokenize for ModuleExploitsCmd {
 pub struct ModulePayloadsCmd(String, Option<String>);
 
 impl ModulePayloadsCmd {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mn = String::from("module.payloads");
         ModulePayloadsCmd(mn, None)
@@ -218,6 +221,7 @@ impl Tokenize for SessionShellWriteCmd {
 pub struct SessionListCmd(String, Option<String>);
 
 impl SessionListCmd {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mn = String::from("session.list");
         SessionListCmd(mn, None)

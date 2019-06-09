@@ -174,7 +174,7 @@ impl Conn {
 
     // internal
     fn authenticate(&mut self, username: &str, password: &str) -> Res<RetType> {
-        let cmd = CmdType::WAuthLoginCmd(AuthLoginCmd::new(String::from(String::from(username)), String::from(password)));
+        let cmd = CmdType::WAuthLoginCmd(AuthLoginCmd::new(String::from(username), String::from(password)));
         self.execute(cmd)
     }
 
