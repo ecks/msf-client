@@ -11,6 +11,11 @@ pub enum CmdType {
     WAuthLoginCmd(AuthLoginCmd),
     WCoreVerCmd(CoreVerCmd),
     WModuleExploitsCmd(ModuleExploitsCmd),
+    WModulePayloadsCmd(ModulePayloadsCmd),
+    WModulePostCmd(ModulePostCmd),
+    WModuleAuxiliaryCmd(ModuleAuxiliaryCmd),
+    WModuleEncodersCmd(ModuleEncodersCmd),
+    WModuleNopsCmd(ModuleNopsCmd),
     WModuleInfoCmd(ModuleInfoCmd),
     WModuleOptionsCmd(ModuleOptionsCmd),
     WModuleExecuteCmd(ModuleExecuteCmd),
@@ -83,6 +88,74 @@ impl ModulePayloadsCmd {
 }
 
 impl Tokenize for ModulePayloadsCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModulePostCmd(String, Option<String>);
+
+impl ModulePostCmd {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        let mn = String::from("module.post");
+        ModulePostCmd(mn, None)
+    }
+}
+
+impl Tokenize for ModulePostCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleAuxiliaryCmd(String, Option<String>);
+
+impl ModuleAuxiliaryCmd {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        let mn = String::from("module.auxiliary");
+        ModuleAuxiliaryCmd(mn, None)
+    }
+}
+
+impl Tokenize for ModuleAuxiliaryCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleEncodersCmd(String, Option<String>);
+
+impl ModuleEncodersCmd {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        let mn = String::from("module.encoders");
+        ModuleEncodersCmd(mn, None)
+    }
+}
+
+impl Tokenize for ModuleEncodersCmd {
+    fn add_token(&mut self, token: String) {
+        self.1 = Some(token);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ModuleNopsCmd(String, Option<String>);
+
+impl ModuleNopsCmd {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        let mn = String::from("module.nops");
+        ModuleNopsCmd(mn, None)
+    }
+}
+
+impl Tokenize for ModuleNopsCmd {
     fn add_token(&mut self, token: String) {
         self.1 = Some(token);
     }
@@ -238,6 +311,11 @@ pub enum RetType {
     WAuthLoginRet(AuthLoginRet),
     WCoreVerRet(CoreVerRet),
     WModuleExploitsRet(ModuleExploitsRet),
+    WModulePayloadsRet(ModulePayloadsRet),
+    WModulePostRet(ModulePostRet),
+    WModuleAuxiliaryRet(ModuleAuxiliaryRet),
+    WModuleEncodersRet(ModuleEncodersRet),
+    WModuleNopsRet(ModuleNopsRet),
     WModuleInfoRet(ModuleInfoRet),
     WModuleOptionsRet(ModuleOptionsRet),
     WModuleExecuteRet(ModuleExecuteRet),
@@ -269,7 +347,27 @@ pub struct ModuleExploitsRet {
 
 #[derive(Deserialize, Debug)]
 pub struct ModulePayloadsRet {
-    pub payloads: Vec<String>,
+    pub modules: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ModulePostRet {
+    pub modules: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ModuleAuxiliaryRet {
+    pub modules: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ModuleEncodersRet {
+    pub modules: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ModuleNopsRet {
+    pub modules: Vec<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -277,7 +375,7 @@ pub struct ModuleInfoRet {
     pub name: String,
     pub description: String,
     pub license: String,
-    pub default_target: u32,
+    pub default_target: Option<u32>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -314,7 +412,7 @@ pub struct SessionShellReadRet {
 
 #[derive(Deserialize, Debug)]
 pub struct SessionMeterpreterWriteRet {
-    pub write_count: String,
+    pub result: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -322,7 +420,7 @@ pub struct SessionShellWriteRet {
     pub write_count: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct SessionInfo {
   pub r#type: String,
   pub tunnel_local: String,

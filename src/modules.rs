@@ -6,7 +6,7 @@ use crate::conn::Conn;
 use crate::common::{Res,RcRef,RunOptions};
 
 use crate::msg::{CmdType,RetType};
-use crate::msg::{ModuleExploitsCmd,ModuleExploitsRet,ModuleInfoCmd,ModuleInfoRet,ModuleOptionsCmd,ModuleOptionRet,ModuleOptionsRet,ModuleExecuteCmd,ModuleExecuteRet,ModuleTargetCompatiblePayloadsCmd,ModuleTargetCompatiblePayloadsRet};
+use crate::msg::{ModuleExploitsCmd,ModulePayloadsCmd,ModulePostCmd,ModuleAuxiliaryCmd,ModuleEncodersCmd,ModuleNopsCmd,ModuleExploitsRet,ModulePayloadsRet,ModulePostRet,ModuleAuxiliaryRet,ModuleEncodersRet,ModuleNopsRet,ModuleInfoCmd,ModuleInfoRet,ModuleOptionsCmd,ModuleOptionRet,ModuleOptionsRet,ModuleExecuteCmd,ModuleExecuteRet,ModuleTargetCompatiblePayloadsCmd,ModuleTargetCompatiblePayloadsRet};
 
 type ReqOptions = Vec<String>;
 
@@ -102,6 +102,38 @@ impl MsfModule for ExploitModule {
     }
 }
 
+pub struct PostModule {
+    pub info: ModuleInfoRet,
+    pub options: ModuleOptionsRet,
+    pub req_options: ReqOptions,
+    pub run_options: RunOptions,
+    conn: RcRef<Conn>,
+    mtype: String,
+    mname: String,
+}
+
+impl PostModule {
+
+}
+
+impl MsfModule for PostModule {
+    fn new_with(conn: RcRef<Conn>, mname: &str) -> Self {
+        let mtype = String::from("post");
+        let (info,options,req_options,run_options) = PostModule::init(&conn, "post", mname); 
+        PostModule { info, options, req_options, run_options, conn, mtype, mname: String::from(mname) }
+    }
+
+    fn exploit(&mut self) -> Res<ModuleExecuteRet> {
+        let cmd = CmdType::WModuleExecuteCmd(ModuleExecuteCmd::new(self.mtype.clone(), self.mname.clone(), self.run_options.clone()));
+        match self.conn.borrow_mut().execute(cmd).unwrap() {
+            RetType::WModuleExecuteRet(mer) => Ok(mer),
+            _ => Err("Could not exploit"),
+        }
+    }
+
+
+}
+
 pub struct ModuleManager {
     conn: RcRef<Conn>,
 }
@@ -120,8 +152,51 @@ impl ModuleManager {
         }
     }
 
+    pub fn payloads(&mut self) -> Res<ModulePayloadsRet> {
+        let cmd = CmdType::WModulePayloadsCmd(ModulePayloadsCmd::new());
+        match self.conn.borrow_mut().execute(cmd).unwrap() {
+            RetType::WModulePayloadsRet(mp) => Ok(mp),
+            _ => Err("incorrect type"),
+        }
+    }
+
+    pub fn post(&mut self) -> Res<ModulePostRet> {
+        let cmd = CmdType::WModulePostCmd(ModulePostCmd::new());
+        match self.conn.borrow_mut().execute(cmd).unwrap() {
+            RetType::WModulePostRet(mp) => Ok(mp),
+            _ => Err("incorrect type"),
+        }
+     }
+
+    pub fn auxiliary(&mut self) -> Res<ModuleAuxiliaryRet> {
+        let cmd = CmdType::WModuleAuxiliaryCmd(ModuleAuxiliaryCmd::new());
+        match self.conn.borrow_mut().execute(cmd).unwrap() {
+            RetType::WModuleAuxiliaryRet(ma) => Ok(ma),
+            _ => Err("incorrect type"),
+        }
+    }
+
+    pub fn encoders(&mut self) -> Res<ModuleEncodersRet> {
+        let cmd = CmdType::WModuleEncodersCmd(ModuleEncodersCmd::new());
+        match self.conn.borrow_mut().execute(cmd).unwrap() {
+            RetType::WModuleEncodersRet(me) => Ok(me),
+            _ => Err("incorrect type"),
+        }
+    }
+
+    pub fn nops(&mut self) -> Res<ModuleNopsRet> {
+        let cmd = CmdType::WModuleNopsCmd(ModuleNopsCmd::new());
+        match self.conn.borrow_mut().execute(cmd).unwrap() {
+            RetType::WModuleNopsRet(mn) => Ok(mn),
+            _ => Err("incorrect type"),
+        }
+    }
+
     pub fn use_exploit(&mut self, mname: &str) -> ExploitModule {
         ExploitModule::new_with(Rc::clone(&self.conn), mname)
     }
-}
 
+    pub fn use_post(&mut self, mname: &str) -> PostModule {
+        PostModule::new_with(Rc::clone(&self.conn), mname)
+    }
+}

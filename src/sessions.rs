@@ -32,7 +32,7 @@ impl MsfSessionType {
     pub fn write(&mut self, data: String) -> String {
         match self {
             MsfSessionType::WMeterpreterSession(session) => { match session.write(data) {
-                                                                Ok(res) => res.write_count,
+                                                                Ok(res) => res.result,
                                                                 Err(err) => String::from(err)
                                                               }
                                                             },
@@ -130,4 +130,3 @@ impl SessionManager {
         }
     }
 }
-

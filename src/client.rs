@@ -12,8 +12,6 @@ use crate::common::{Res,RcRef};
 
 
 
-
-
 pub struct MsfClient {
     conn: RcRef<Conn>,
 }
@@ -29,6 +27,14 @@ impl MsfClient {
 
         Ok(MsfClient { conn: Rc::new(RefCell::new(conn))})
 
+    }
+
+    pub fn new_from(conn: Conn) -> Self {
+        MsfClient { conn: Rc::new(RefCell::new(conn)) }
+    }
+
+    pub fn clone_conn(&mut self) -> Conn {
+        self.conn.borrow_mut().clone()
     }
 
     pub fn core(&mut self) -> CoreManager {

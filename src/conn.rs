@@ -12,6 +12,7 @@ use crate::msg::AuthLoginCmd;
 use crate::msg::CmdType;
 use crate::msg::RetType;
 
+#[derive(Clone)]
 pub struct Conn {
     host: String,
     token: Option<String>,
@@ -88,6 +89,51 @@ impl Conn {
                                                          };
                                                          let de_str = Deserialize::deserialize(&mut de).unwrap();
                                                          Ok(RetType::WModuleExploitsRet(de_str)) },
+            CmdType::WModulePayloadsCmd(ref mut mp) => { mp.add_token(token);
+                                                         mp.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                         let mut body_buf: Vec<u8> = vec![];
+                                                         let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                             Ok(res) => res,
+                                                             Err(err_str) => return Err(err_str),
+                                                         };
+                                                         let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                         Ok(RetType::WModulePayloadsRet(de_str)) },
+            CmdType::WModulePostCmd(ref mut mp) => { mp.add_token(token);
+                                                     mp.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                     let mut body_buf: Vec<u8> = vec![];
+                                                     let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                         Ok(res) => res,
+                                                         Err(err_str) => return Err(err_str),
+                                                     };
+                                                     let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                     Ok(RetType::WModuleExploitsRet(de_str)) },
+            CmdType::WModuleAuxiliaryCmd(ref mut ma) => { ma.add_token(token);
+                                                          ma.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                          let mut body_buf: Vec<u8> = vec![];
+                                                          let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                              Ok(res) => res,
+                                                              Err(err_str) => return Err(err_str),
+                                                          };
+                                                          let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                          Ok(RetType::WModuleAuxiliaryRet(de_str)) },
+            CmdType::WModuleEncodersCmd(ref mut me) => { me.add_token(token);
+                                                         me.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                         let mut body_buf: Vec<u8> = vec![];
+                                                         let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                             Ok(res) => res,
+                                                             Err(err_str) => return Err(err_str),
+                                                         };
+                                                         let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                         Ok(RetType::WModuleEncodersRet(de_str)) },
+            CmdType::WModuleNopsCmd(ref mut mn) => { mn.add_token(token);
+                                                     mn.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                                                     let mut body_buf: Vec<u8> = vec![];
+                                                     let mut de = match self.connect_and_exec(buf, &mut body_buf) {
+                                                         Ok(res) => res,
+                                                         Err(err_str) => return Err(err_str),
+                                                     };
+                                                     let de_str = Deserialize::deserialize(&mut de).unwrap();
+                                                     Ok(RetType::WModuleNopsRet(de_str)) },
             CmdType::WModuleInfoCmd(ref mut mi) => { mi.add_token(token);
                                                      mi.serialize(&mut Serializer::new(&mut buf)).unwrap();
                                                      let mut body_buf: Vec<u8> = vec![];
